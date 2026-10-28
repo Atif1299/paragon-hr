@@ -10,7 +10,7 @@ from app.core.database import get_db
 from app.core.deps import any_user, editor
 from app.models import Candidate, Event, EventParticipant, Job, User
 from app.schemas import EventIn, EventUpdate, ParticipantIn, ParticipantUpdate
-from app.services import activity, google_sync, scheduling
+from app.services import activity, google_sync, notifications, scheduling
 
 router = APIRouter(prefix="/api/events", tags=["events"])
 
@@ -88,6 +88,7 @@ def add_participant(
     else:
         candidate.pipeline_status = Pipeline.ONBOARDING_SCHEDULED
         candidate.onboarding_link = event.meeting_link
+    notifications.booking_confirmed(db, candidate, event)
     activity.log(db, candidate.id, "Added to event", event.title, user.name)
     db.commit()
     background.add_task(google_sync.run_sync, candidate.id, event.id)
